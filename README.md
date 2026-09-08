@@ -1,4 +1,8 @@
+<div align="center">
+
+
 # luci-app-jodu52140-status
+
 
 [![Version](https://img.shields.io/badge/version-1.0-blue.svg)]()
 [![OpenWrt Compatible](https://img.shields.io/badge/OpenWrt-Compatible-success.svg)]()
@@ -7,6 +11,9 @@
 A lightweight LuCI web interface for OpenWrt that monitors and controls the **JODU52140** 5G ODU (Outdoor Unit) directly from your router — no need to log into the ODU's own web portal separately.
 
 The router bridges to the ODU over Telnet, pulls live baseband diagnostics, and can push AT commands for cell locking, all from a dashboard inside LuCI.
+
+</div>
+
 
 ## Features
 
