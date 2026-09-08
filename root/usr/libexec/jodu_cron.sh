@@ -9,7 +9,8 @@ CRONFILE="/etc/crontabs/root"
 TAG="# jodu52140-scheduled-reboot"
 
 touch "$CRONFILE"
-sed -i "\#$TAG#d" "$CRONFILE"
+grep -vF "$TAG" "$CRONFILE" > "$CRONFILE.tmp" 2>/dev/null
+mv "$CRONFILE.tmp" "$CRONFILE"
 
 if [ "$ENABLE" = "1" ]; then
     [ -z "$MIN" ] && MIN="0"

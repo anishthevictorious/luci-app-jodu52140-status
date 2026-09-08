@@ -4,8 +4,8 @@ touch /tmp/odu_setup.lock
 trap 'rm -f /tmp/odu_setup.lock' EXIT INT TERM HUP
 
 IP=$(/sbin/uci -q get jodu52140.main.ip || echo "192.168.225.1")
-USER="root"
-PASS="oelinux123"
+USER=$(/sbin/uci -q get jodu52140.main.user || echo "root")
+PASS=$(/sbin/uci -q get jodu52140.main.pass || echo "oelinux123")
 
 NR_ARFCN=$(/sbin/uci -q get jodu52140.main.arfcn)
 NR_PCI=$(/sbin/uci -q get jodu52140.main.pci)

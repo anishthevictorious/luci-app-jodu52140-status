@@ -13,8 +13,8 @@ rm -f "$OUT"
 
 (
     IP=$(/sbin/uci -q get jodu52140.main.ip || echo "192.168.225.1")
-    USER="root"
-    PASS="oelinux123"
+    USER=$(/sbin/uci -q get jodu52140.main.user || echo "root")
+    PASS=$(/sbin/uci -q get jodu52140.main.pass || echo "oelinux123")
     AT_CMD='AT+QSCAN=2,1'
 
     OUTPUT=$( (

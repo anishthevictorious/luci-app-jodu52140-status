@@ -255,7 +255,11 @@ return view.extend({
                 <div class="cbi-section-node sa-card" style="padding: 14px 15px; text-align: left;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                         <div style="font-weight: 600; color: #f8fafc; font-size: 14px;">Nearby Cells</div>
-                        <button class="btn action-btn" id="odu-scan-btn" style="background-color:#334155 !important; border:1px solid #475569 !important; color:#fff !important;">Scan Nearby Cells</button>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn action-btn" id="odu-manual-lock-btn" style="background-color:#334155 !important; border:1px solid #475569 !important; color:#fff !important;">Manual Lock</button>
+                            <button class="btn action-btn" id="odu-unlock-btn" style="background-color:#334155 !important; border:1px solid #b91c1c !important; color:#fca5a5 !important;">Unlock Cell</button>
+                            <button class="btn action-btn" id="odu-scan-btn" style="background-color:#334155 !important; border:1px solid #475569 !important; color:#fff !important;">Scan Nearby Cells</button>
+                        </div>
                     </div>
                     <div id="odu-scan-status" style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; display:none;"></div>
                     <div class="sa-transparent-node" id="odu-scan-wrap" style="display:none;">
@@ -331,14 +335,16 @@ return view.extend({
             }
         });
 
-        function applyCellLock(arfcn, pci) {
-            if (!confirm('Lock modem to PCI ' + pci + ' / ARFCN ' + arfcn + '?')) return;
+        function applyCellLock(arfcn, pci, skipConfirm) {
+            var isUnlock = !arfcn && !pci;
+            var confirmMsg = isUnlock ? 'Unlock the modem from its current cell (auto camp)?' : ('Lock modem to PCI ' + pci + ' / ARFCN ' + arfcn + '?');
+            if (!skipConfirm && !confirm(confirmMsg)) return;
 
             isConfiguring = true;
             var stateEl = document.getElementById('ui-state');
             var iconEl = document.getElementById('icon-conn');
             var secondsLeft = 20;
-            var baseText = 'LOCKING CELL';
+            var baseText = isUnlock ? 'UNLOCKING CELL' : 'LOCKING CELL';
 
             if (stateEl && iconEl) {
                 stateEl.innerText = baseText + ' (' + secondsLeft + 's)';
@@ -368,6 +374,26 @@ return view.extend({
 
             fs.exec_direct('/bin/sh', ['-c', cmds]).catch(function(e) {});
         }
+
+        var unlockBtn = container.querySelector('#odu-unlock-btn');
+        unlockBtn.addEventListener('click', function() {
+            applyCellLock('', '');
+        });
+
+        var manualLockBtn = container.querySelector('#odu-manual-lock-btn');
+        manualLockBtn.addEventListener('click', function() {
+            var arfcn = prompt('Enter NR-ARFCN to lock (e.g. 634080):', '');
+            if (arfcn === null) return;
+            arfcn = arfcn.trim();
+            if (!arfcn) { alert('ARFCN is required for a manual lock.'); return; }
+
+            var pci = prompt('Enter NR PCI to lock (e.g. 263):', '');
+            if (pci === null) return;
+            pci = pci.trim();
+            if (!pci) { alert('PCI is required for a manual lock.'); return; }
+
+            applyCellLock(arfcn, pci, true);
+        });
 
         var scanBtn = container.querySelector('#odu-scan-btn');
         scanBtn.addEventListener('click', function() {
@@ -555,8 +581,8 @@ return view.extend({
         btn.addEventListener('click', function() {
             uci.load('jodu52140').then(function() {
                 var ip = uci.get('jodu52140', 'main', 'ip') || '192.168.225.1';
-                var arfcn = uci.get('jodu52140', 'main', 'arfcn') || '';
-                var pci = uci.get('jodu52140', 'main', 'pci') || '';
+                var telUser = uci.get('jodu52140', 'main', 'user') || 'root';
+                var telPass = uci.get('jodu52140', 'main', 'pass') || 'oelinux123';
                 var schedEnabled = uci.get('jodu52140', 'main', 'sched_reboot') === '1';
                 var schedTime = uci.get('jodu52140', 'main', 'sched_time') || '04:00';
                 
@@ -572,6 +598,18 @@ return view.extend({
                             <label class="cbi-value-title">ODU IP Address</label>
                             <div class="cbi-value-field">
                                 <input type="text" id="cfg-ip" class="cbi-input-text" value="${ip}" autocomplete="off" data-lpignore="true">
+                            </div>
+                        </div>
+                        <div class="cbi-value">
+                            <label class="cbi-value-title">Telnet Username</label>
+                            <div class="cbi-value-field">
+                                <input type="text" id="cfg-user" class="cbi-input-text" value="${telUser}" placeholder="default: root" autocomplete="off" data-lpignore="true">
+                            </div>
+                        </div>
+                        <div class="cbi-value">
+                            <label class="cbi-value-title">Telnet Password</label>
+                            <div class="cbi-value-field">
+                                <input type="text" id="cfg-pass" class="cbi-input-text" value="${telPass}" placeholder="default: oelinux123" autocomplete="off" data-lpignore="true">
                             </div>
                         </div>
                     </div>
@@ -638,12 +676,16 @@ return view.extend({
                 
                 btnSave.onclick = function() {
                     var newIp = (document.getElementById('cfg-ip') ? document.getElementById('cfg-ip').value.trim() : '') || '192.168.225.1';
+                    var newUser = (document.getElementById('cfg-user') ? document.getElementById('cfg-user').value.trim() : '') || 'root';
+                    var newPass = (document.getElementById('cfg-pass') ? document.getElementById('cfg-pass').value.trim() : '') || 'oelinux123';
 
                     btnSave.innerText = 'Saving...';
                     btnSave.disabled = true;
 
                     var cmds = [
                         'uci set jodu52140.main.ip="' + newIp + '"',
+                        'uci set jodu52140.main.user="' + newUser + '"',
+                        'uci set jodu52140.main.pass="' + newPass + '"',
                         'uci commit jodu52140'
                     ].join('; ');
 

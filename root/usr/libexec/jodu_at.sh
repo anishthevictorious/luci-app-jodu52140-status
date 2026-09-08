@@ -3,8 +3,8 @@ CMD="$1"
 [ -z "$CMD" ] && exit 1
 
 IP=$(/sbin/uci -q get jodu52140.main.ip || echo "192.168.225.1")
-USER="root"
-PASS="oelinux123"
+USER=$(/sbin/uci -q get jodu52140.main.user || echo "root")
+PASS=$(/sbin/uci -q get jodu52140.main.pass || echo "oelinux123")
 
 # Execute the AT command over Telnet
 OUTPUT=$( (

@@ -2,8 +2,8 @@
 # /usr/libexec/jodu_lock.sh - Locks or unlocks 5G NR Cell on Jio ODU
 
 IP=$(/sbin/uci -q get jodu52140.main.ip || echo "192.168.225.1")
-USER="root"
-PASS="oelinux123"
+USER=$(/sbin/uci -q get jodu52140.main.user || echo "root")
+PASS=$(/sbin/uci -q get jodu52140.main.pass || echo "oelinux123")
 
 NR_ARFCN="$1"
 NR_PCI="$2"
