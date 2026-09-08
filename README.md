@@ -4,7 +4,7 @@
 # luci-app-jodu52140-status
 
 
-[![Version](https://img.shields.io/badge/version-1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-2.0-blue.svg)]()
 [![OpenWrt Compatible](https://img.shields.io/badge/OpenWrt-Compatible-success.svg)]()
 [![ImmortalWrt Compatible](https://img.shields.io/badge/ImmortalWrt-Compatible-success.svg)]()
 
@@ -36,7 +36,7 @@ The router bridges to the ODU over Telnet, pulls live baseband diagnostics, and 
 
 
 ```sh
-cd /tmp && uclient-fetch -O luci-app-jodu52140-status-1.0-r1.apk https://github.com/anishthevictorious/luci-app-jodu52140-status/releases/download/1.0-r1/luci-app-jodu52140-status-1.0-r1.apk && apk add --allow-untrusted ./luci-app-jodu52140-status-*.apk
+cd /tmp && uclient-fetch -O luci-app-jodu52140-status-2.0-r1.apk https://github.com/anishthevictorious/luci-app-jodu52140-status/releases/download/2.0-r1/luci-app-jodu52140-status-2.0-r1.apk && apk add --allow-untrusted ./luci-app-jodu52140-status-*.apk
 ```
 
 Clone into your OpenWrt buildroot and build normally:
