@@ -63,7 +63,6 @@ Enter the NR-ARFCN and PCI of the tower you want to lock to, then apply — the 
 
 
 > [!CAUTION]
-> ### Educational & Research Disclaimer
 >
 > This project is not affiliated with, endorsed by, or authorized by Jio or Qualcomm.
 >
