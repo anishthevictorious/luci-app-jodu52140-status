@@ -34,6 +34,11 @@ The router bridges to the ODU over Telnet, pulls live baseband diagnostics, and 
 
 ## Installation
 
+
+```sh
+cd /tmp && uclient-fetch -O luci-app-jodu5174x-status-3.0-r1.apk https://github.com/anishthevictorious/luci-app-jodu5174x-status/releases/download/3.0-r1/luci-app-jodu5174x-status-3.0-r1.apk && apk add --allow-untrusted ./luci-app-jodu5174x-status-*.apk
+```
+
 Clone into your OpenWrt buildroot and build normally:
 
 ```sh
