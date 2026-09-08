@@ -61,11 +61,11 @@ Config lives in `/etc/config/jodu52140` (UCI):
 
 Enter the NR-ARFCN and PCI of the tower you want to lock to, then apply — the modem will drop and re-lock to that cell. Clear the fields to return to automatic tower selection.
 
-## Security note
 
-The scripts authenticate to the ODU over plaintext Telnet using its default credentials, which are stored in `/etc/config/jodu52140`. Restrict LuCI/ACL access to trusted admins only.
-
-## Disclaimer
-
-This project is not affiliated with, endorsed by, or authorized by Jio or Qualcomm. Using AT commands to change cellular connectivity parameters (like PCI locking) is done at your own risk — incorrect values may cause temporary loss of connectivity until reset.
+> [!CAUTION]
+> ### Educational & Research Disclaimer
+>
+> This project is not affiliated with, endorsed by, or authorized by Jio or Qualcomm.
+>
+> Features such as cell locking, rebooting, and diagnostic AT commands interact directly with the ODU's modem over Telnet. Using AT commands to change cellular connectivity parameters (like PCI/ARFCN locking) is done at your own risk — incorrect values may cause temporary loss of connectivity until reset. The developers are not responsible for connection drops, device misconfigurations, or service interruptions caused by third-party modems or network operators.
 
