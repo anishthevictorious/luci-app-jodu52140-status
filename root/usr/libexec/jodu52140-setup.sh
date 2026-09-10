@@ -53,6 +53,11 @@ sleep 1
 echo "    CPU=\$(awk -v pt=\"\${p_total:-0}\" -v pi=\"\${p_idle:-0}\" '/^cpu / { t=\$2+\$3+\$4+\$5+\$6+\$7+\$8+\$9; i=\$5; dt=t-pt; di=i-pi; if(pt>0 && dt>0) print int(100*(dt-di)/dt); else print \"0\"; print t\" \"i > \"/tmp/odu_cpu_stat\"; exit }' /proc/stat)"
 sleep 1
 echo "    MEM=\$(awk '/MemTotal/{t=\$2} /MemAvailable/{a=\$2} END{if(t>0) print int(100*(t-a)/t); else print \"0\"}' /proc/meminfo)"
+sleep 1
+echo "    ETHRAW=\$(ethtool eth0 2>/dev/null)"
+echo "    ETHSPD=\$(echo \"\$ETHRAW\" | awk -F': ' '/Speed:/{print \$2}')"
+echo "    ETHDPX=\$(echo \"\$ETHRAW\" | awk -F': ' '/Duplex:/{print \$2}')"
+echo "    ETHLNK=\$(echo \"\$ETHRAW\" | awk -F': ' '/Link detected:/{print \$2}')"
 echo "    QTEMP=\"\""
 sleep 1
 echo "    if [ -x /usr/bin/lux_atc ]; then"
@@ -78,12 +83,14 @@ echo "        echo \"---CPU---\""
 echo "        echo \"\$CPU\""
 echo "        echo \"---MEM---\""
 echo "        echo \"\$MEM\""
+echo "        echo \"---ETH---\""
+echo "        echo \"\$ETHSPD|\$ETHDPX|\$ETHLNK\""
 echo "        echo \"---QTEMP---\""
 echo "        echo \"\$QTEMP\""
 echo "        echo \"---UPTIME---\""
 echo "        cat /proc/uptime"
 echo "        echo \"---VERSION---\""
-echo "        echo \"1.2.0\""
+echo "        echo \"1.2.1\""
 sleep 1
 echo "    } > /tmp/www/status.tmp"
 echo "    mv /tmp/www/status.tmp /tmp/www/status.txt"

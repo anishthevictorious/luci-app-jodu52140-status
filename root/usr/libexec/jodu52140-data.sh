@@ -16,20 +16,20 @@ if [ -f /tmp/odu_force_setup ]; then
     [ -z "$IP" ] && IP="192.168.225.1"
     
     touch /tmp/odu_setup.lock
-    /usr/libexec/odu-setup.sh >/dev/null 2>&1 &
+    /usr/libexec/jodu52140-setup.sh >/dev/null 2>&1 &
     echo '{"server_link":"CONFIGURING"}'
     exit 0
 fi
 
 STATUS=$(wget -q -O - -T 3 "http://$IP:8080/status.txt" 2>/dev/null | tr -d '\r')
 
-if ! echo "$STATUS" | grep -q -e '---UPTIME---' || ! echo "$STATUS" | grep -q -e '1.2.0'; then
+if ! echo "$STATUS" | grep -q -e '---UPTIME---' || ! echo "$STATUS" | grep -q -e '1.2.1'; then
     if [ -f /tmp/odu_setup.lock ]; then
         echo '{"server_link":"CONFIGURING"}'
         exit 0
     else
         touch /tmp/odu_setup.lock
-        /usr/libexec/odu-setup.sh >/dev/null 2>&1 &
+        /usr/libexec/jodu52140-setup.sh >/dev/null 2>&1 &
         echo '{"server_link":"INITIALIZING"}'
         exit 0
     fi
@@ -99,11 +99,18 @@ TX_BYTES=$(echo "$NETWORK_BLOCK" | grep '"tx_bytes"' | head -n1 | awk -F':' '{pr
 [ -z "$TX_BYTES" ] && TX_BYTES="0"
 
 MEM=$(echo "$STATUS" | sed -n '/---MEM---/,/---QTEMP---/p' | grep -v -e '---' | head -n1 | tr -d '\r\n')
+ETH_LINE=$(echo "$STATUS" | sed -n '/---ETH---/,/---QTEMP---/p' | grep -v -e '---' | head -n1 | tr -d '\r\n')
+ETH_SPEED=$(echo "$ETH_LINE" | awk -F'|' '{print $1}')
+ETH_DUPLEX=$(echo "$ETH_LINE" | awk -F'|' '{print $2}')
+ETH_LINK=$(echo "$ETH_LINE" | awk -F'|' '{print $3}')
+[ -z "$ETH_SPEED" ] && ETH_SPEED="Unknown"
+[ -z "$ETH_DUPLEX" ] && ETH_DUPLEX="Unknown"
+[ -z "$ETH_LINK" ] && ETH_LINK="no"
 QTEMP=$(echo "$STATUS" | sed -n '/---QTEMP---/,/---UPTIME---/p' | grep -v -e '---' | grep 'cpuss-0-usr' | awk -F',' '{print $2}' | tr -d '"' | tr -d ' ' | tr -d '\r\n')
 UPTIME=$(echo "$STATUS" | sed -n '/---UPTIME---/,$p' | grep -v -e '---' | head -n1 | tr -d '\r\n')
 CPU=$(echo "$STATUS" | sed -n '/---CPU---/,/---QTEMP---/p' | grep -v -e '---' | head -n1 | tr -d '\r\n')
 
-JSON_OUT=$(printf '{"server_link":"ONLINE","state":"%s","duplex":"%s","mccmnc":"%s","band":"%s","bw":"%s","rsrp":"%s","rsrq":"%s","sinr":"%s","temp":"%s","uptime":"%s","cpu":"%s","mem":"%s","bler":"%s","mod":"%s","mimo":"%s","pcid":"%s","arfcn":"%s","scc_band":"%s","scc_bw":"%s","scc_rsrp":"%s","scc_rsrq":"%s","scc_sinr":"%s","scc_bler":"%s","scc_mod":"%s","scc_mimo":"%s","scc_pcid":"%s","scc_arfcn":"%s","rx_bytes":"%s","tx_bytes":"%s"}' \
-  "${STATE:-CONNECTED}" "${DUPLEX}" "${MCCMNC:---}" "${BAND:-n78}" "${BW:-100}" "${RSRP:--80}" "${RSRQ:--10}" "${SINR:--18}" "${QTEMP:-0}" "${UPTIME:-0}" "${CPU:-0}" "${MEM:-0}" "${BLER_P}" "${MOD:---}" "${MIMO:---}" "${PCID:-263}" "${ARFCN:-634080}" "${SCC_BAND:-n78}" "${SCC_BW:-0}" "${SCC_RSRP:-0}" "${SCC_RSRQ:-0}" "${SCC_SINR:-0}" "${SCC_BLER}" "${SCC_MOD:-NA}" "${SCC_MIMO:-NA}" "${SCC_PCID:-0}" "${SCC_ARFCN:-0}" "${RX_BYTES}" "${TX_BYTES}")
+JSON_OUT=$(printf '{"server_link":"ONLINE","state":"%s","duplex":"%s","mccmnc":"%s","band":"%s","bw":"%s","rsrp":"%s","rsrq":"%s","sinr":"%s","temp":"%s","uptime":"%s","cpu":"%s","mem":"%s","eth_speed":"%s","eth_duplex":"%s","eth_link":"%s","bler":"%s","mod":"%s","mimo":"%s","pcid":"%s","arfcn":"%s","scc_band":"%s","scc_bw":"%s","scc_rsrp":"%s","scc_rsrq":"%s","scc_sinr":"%s","scc_bler":"%s","scc_mod":"%s","scc_mimo":"%s","scc_pcid":"%s","scc_arfcn":"%s","rx_bytes":"%s","tx_bytes":"%s"}' \
+  "${STATE:-CONNECTED}" "${DUPLEX}" "${MCCMNC:---}" "${BAND:-n78}" "${BW:-100}" "${RSRP:--80}" "${RSRQ:--10}" "${SINR:--18}" "${QTEMP:-0}" "${UPTIME:-0}" "${CPU:-0}" "${MEM:-0}" "${ETH_SPEED}" "${ETH_DUPLEX}" "${ETH_LINK}" "${BLER_P}" "${MOD:---}" "${MIMO:---}" "${PCID:-263}" "${ARFCN:-634080}" "${SCC_BAND:-n78}" "${SCC_BW:-0}" "${SCC_RSRP:-0}" "${SCC_RSRQ:-0}" "${SCC_SINR:-0}" "${SCC_BLER}" "${SCC_MOD:-NA}" "${SCC_MIMO:-NA}" "${SCC_PCID:-0}" "${SCC_ARFCN:-0}" "${RX_BYTES}" "${TX_BYTES}")
 
 echo "$JSON_OUT"

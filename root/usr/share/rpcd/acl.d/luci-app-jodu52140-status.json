@@ -4,14 +4,13 @@
         "read": {
             "uci": [ "jodu52140" ],
             "file": {
-                "/usr/libexec/odu-data.sh": [ "read", "exec" ],
-                "/usr/libexec/jodu_reboot.sh": [ "exec" ],
-                "/usr/libexec/jodu_uptime.sh": [ "exec" ],
-                "/usr/libexec/jodu_at.sh": [ "exec" ],
-                "/usr/libexec/jodu_lock.sh": [ "exec" ],
-                "/usr/libexec/jodu_neighbor.sh": [ "exec" ],
-                "/usr/libexec/jodu_neighbor_result.sh": [ "exec" ],
-                "/usr/libexec/odu-setup.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-data.sh": [ "read", "exec" ],
+                "/usr/libexec/jodu52140-reboot.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-at.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-lock.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-neighbor.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-neighbor-result.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-setup.sh": [ "exec" ],
                 "/bin/sh": [ "exec" ]
             }
         },
@@ -21,7 +20,7 @@
                 "/tmp/odu_force_setup": [ "write" ],
                 "/sbin/uci": [ "exec" ],
                 "/bin/sh": [ "exec" ],
-                "/usr/libexec/jodu_cron.sh": [ "exec" ],
+                "/usr/libexec/jodu52140-cron.sh": [ "exec" ],
                 "/etc/crontabs/root": [ "write" ],
                 "/etc/init.d/cron": [ "exec" ]
             }

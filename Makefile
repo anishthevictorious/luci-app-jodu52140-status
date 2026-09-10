@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-jodu52140-status
-PKG_VERSION:=2.0
+PKG_VERSION:=3.0
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -34,14 +34,14 @@ define Package/luci-app-jodu52140-status/install
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/jodu52140/status.js $(1)/www/luci-static/resources/view/jodu52140/
 	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/jodu52140/jio-logo.png $(1)/www/luci-static/resources/view/jodu52140/
 	$(INSTALL_DIR) $(1)/usr/libexec
-	$(INSTALL_BIN) ./root/usr/libexec/odu-data.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/odu-setup.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_reboot.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_at.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_lock.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_neighbor.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_neighbor_result.sh $(1)/usr/libexec/
-	$(INSTALL_BIN) ./root/usr/libexec/jodu_cron.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-data.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-setup.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-reboot.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-at.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-lock.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-neighbor.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-neighbor-result.sh $(1)/usr/libexec/
+	$(INSTALL_BIN) ./root/usr/libexec/jodu52140-cron.sh $(1)/usr/libexec/
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./root/etc/config/jodu52140 $(1)/etc/config/
 endef

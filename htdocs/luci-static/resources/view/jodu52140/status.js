@@ -216,7 +216,7 @@ return view.extend({
                     <h3>Cellular Parameters (Primary Cell)</h3>
                     <div class="sa-transparent-node">
                         <table class="sa-table">
-                            <tr class="sa-tr"><td class="sa-td left">Duplex Mode</td><td class="sa-td right val-highlight" id="ui-duplex">--</td></tr>
+                            <tr class="sa-tr"><td class="sa-td left">Ethernet Link</td><td class="sa-td right val-highlight" id="ui-ethlink">--</td></tr>
                             <tr class="sa-tr"><td class="sa-td left">Band</td><td class="sa-td right val-highlight" id="ui-band">--</td></tr>
                             <tr class="sa-tr"><td class="sa-td left">Bandwidth</td><td class="sa-td right val-highlight" id="ui-bw">--</td></tr>
                             <tr class="sa-tr"><td class="sa-td left">NR-ARFCN</td><td class="sa-td right val-highlight" id="ui-arfcn">--</td></tr>
@@ -329,11 +329,22 @@ return view.extend({
                         setTimeout(function() { window.location.reload(); }, 60000); 
                     }
                     
-                    var cmds = "/usr/libexec/jodu_reboot.sh >/dev/null 2>&1 &";
+                    var cmds = "/usr/libexec/jodu52140-reboot.sh >/dev/null 2>&1 &";
                     fs.exec_direct('/bin/sh', ['-c', cmds]).catch(function(e) {});
                 });
             }
         });
+
+        function lookupOperator(mcc, mnc) {
+            var m = parseInt(mnc, 10);
+            if (mcc === '405' && m >= 840 && m <= 879) return 'Jio';
+            if (mcc === '404' && m >= 1 && m <= 19) return 'VI';
+            if (mcc === '404' && [20, 22, 24, 27, 30, 44, 46].indexOf(m) !== -1) return 'VI';
+            if (mcc === '404' && [10, 40, 45, 49, 70, 72, 73, 74, 75, 77, 78, 79, 80, 90, 91, 92, 93, 94, 95, 96, 97, 98].indexOf(m) !== -1) return 'Airtel';
+            if (mcc === '405' && m >= 25 && m <= 52) return 'Airtel';
+            if (mcc === '404' && [38, 51, 53, 57, 58, 59].indexOf(m) !== -1) return 'BSNL';
+            return null;
+        }
 
         function applyCellLock(arfcn, pci, skipConfirm) {
             var isUnlock = !arfcn && !pci;
@@ -369,14 +380,27 @@ return view.extend({
                 'uci set jodu52140.main.arfcn="' + arfcn + '"',
                 'uci set jodu52140.main.pci="' + pci + '"',
                 'uci commit jodu52140',
-                '/usr/libexec/jodu_lock.sh "' + arfcn + '" "' + pci + '"'
+                '/usr/libexec/jodu52140-lock.sh "' + arfcn + '" "' + pci + '"'
             ].join('; ');
 
             fs.exec_direct('/bin/sh', ['-c', cmds]).catch(function(e) {});
         }
 
         var unlockBtn = container.querySelector('#odu-unlock-btn');
+        unlockBtn.disabled = true;
+        unlockBtn.style.opacity = '0.4';
+        unlockBtn.style.cursor = 'not-allowed';
+        uci.load('jodu52140').then(function() {
+            var lockedArfcn = uci.get('jodu52140', 'main', 'arfcn') || '';
+            var lockedPci = uci.get('jodu52140', 'main', 'pci') || '';
+            if (lockedArfcn && lockedPci) {
+                unlockBtn.disabled = false;
+                unlockBtn.style.opacity = '1';
+                unlockBtn.style.cursor = 'pointer';
+            }
+        });
         unlockBtn.addEventListener('click', function() {
+            if (unlockBtn.disabled) return;
             applyCellLock('', '');
         });
 
@@ -421,44 +445,68 @@ return view.extend({
                 var mccmncMatch = topMode.match(/^(\d{3})(\d{2,3})/);
                 if (mccmncMatch) { servingMcc = mccmncMatch[1]; servingMnc = mccmncMatch[2]; }
 
-                lines.forEach(function(l) {
-                    var f = l.replace('+QSCAN: ', '').split(',');
-                    var mcc = (f[1] || '').trim();
-                    var mnc = (f[2] || '').trim();
-                    var arfcn = (f[3] || '').trim();
-                    var pci = (f[4] || '').trim();
-                    var rsrp = (f[5] || '').trim();
+                uci.load('jodu52140').then(function() {
+                    var lockedArfcn = uci.get('jodu52140', 'main', 'arfcn') || '';
+                    var lockedPci = uci.get('jodu52140', 'main', 'pci') || '';
 
-                    var isForeign = servingMcc && (mcc !== servingMcc || mnc !== servingMnc);
-                    var isServing = arfcn === servingArfcn;
+                    lines.forEach(function(l) {
+                        var f = l.replace('+QSCAN: ', '').split(',');
+                        var mcc = (f[1] || '').trim();
+                        var mnc = (f[2] || '').trim();
+                        var arfcn = (f[3] || '').trim();
+                        var pci = (f[4] || '').trim();
+                        var rsrp = (f[5] || '').trim();
 
-                    var row = document.createElement('tr');
-                    row.className = 'sa-tr';
-                    row.innerHTML =
-                        '<td class="sa-td left">' + mcc + mnc + (isForeign ? ' <span style="color:#fbbf24;">(other)</span>' : '') + '</td>' +
-                        '<td class="sa-td left">' + pci + '</td>' +
-                        '<td class="sa-td left">' + arfcn + (isServing ? ' <span style="color:#4ade80;">(serving)</span>' : '') + '</td>' +
-                        '<td class="sa-td right">' + rsrp + ' dBm</td>' +
-                        '<td class="sa-td right"></td>';
-                    tblEl.appendChild(row);
+                        var isForeign = servingMcc && (mcc !== servingMcc || mnc !== servingMnc);
+                        var isServing = arfcn === servingArfcn;
+                        var isLockedTarget = lockedArfcn && lockedPci && arfcn === lockedArfcn && pci === lockedPci;
+                        var operatorName = isForeign ? lookupOperator(mcc, mnc) : null;
+                        var plmnLabel = mcc + mnc + (isForeign ? ' <span style="color:#fbbf24;">(' + (operatorName || 'other') + ')</span>' : '');
 
-                    var actionCell = row.lastElementChild;
-                    if (isServing) {
-                        actionCell.innerHTML = '<span style="color:#4ade80; font-size:12px; font-weight:600;">Active</span>';
-                    } else {
-                        var lockBtn = document.createElement('button');
-                        lockBtn.className = 'btn action-btn';
-                        lockBtn.style.cssText = 'background-color:#0284c7 !important; border:1px solid #0369a1 !important; color:#fff !important; height:26px !important; padding:2px 12px !important; font-size:12px !important;';
-                        lockBtn.innerText = 'Lock';
-                        (function(a, p) {
-                            lockBtn.onclick = function() { applyCellLock(a, p); };
-                        })(arfcn, pci);
-                        actionCell.appendChild(lockBtn);
-                    }
+                        var row = document.createElement('tr');
+                        row.className = 'sa-tr';
+                        row.innerHTML =
+                            '<td class="sa-td left">' + plmnLabel + '</td>' +
+                            '<td class="sa-td left">' + pci + '</td>' +
+                            '<td class="sa-td left">' + arfcn + (isServing ? ' <span style="color:#4ade80;">(serving)</span>' : '') + '</td>' +
+                            '<td class="sa-td right">' + rsrp + ' dBm</td>' +
+                            '<td class="sa-td right"></td>';
+                        tblEl.appendChild(row);
+
+                        var actionCell = row.lastElementChild;
+
+                        function makeLockBtn(a, p) {
+                            var b = document.createElement('button');
+                            b.className = 'btn action-btn';
+                            b.style.cssText = 'background-color:#0284c7 !important; border:1px solid #0369a1 !important; color:#fff !important; height:26px !important; padding:2px 12px !important; font-size:12px !important;';
+                            b.innerText = 'Lock';
+                            b.onclick = function() { applyCellLock(a, p); };
+                            return b;
+                        }
+
+                        if (isForeign) {
+                            actionCell.innerHTML = '<span style="color:#64748b; font-size:11px;">Diff. operator</span>';
+                        } else if (isLockedTarget && !isServing) {
+                            actionCell.innerHTML = '<span style="color:#38bdf8; font-size:12px; font-weight:600;">Locked</span>';
+                        } else if (isServing) {
+                            var activeWrap = document.createElement('div');
+                            activeWrap.style.cssText = 'display:flex; align-items:center; gap:8px; justify-content:flex-end;';
+                            var activeLabel = document.createElement('span');
+                            activeLabel.style.cssText = 'color:#4ade80; font-size:12px; font-weight:600;';
+                            activeLabel.innerText = isLockedTarget ? 'Active · Locked' : 'Active';
+                            activeWrap.appendChild(activeLabel);
+                            if (!isLockedTarget) {
+                                activeWrap.appendChild(makeLockBtn(arfcn, pci));
+                            }
+                            actionCell.appendChild(activeWrap);
+                        } else {
+                            actionCell.appendChild(makeLockBtn(arfcn, pci));
+                        }
+                    });
+
+                    statusEl.innerText = lines.length + ' cell(s) found.';
+                    wrapEl.style.display = 'block';
                 });
-
-                statusEl.innerText = lines.length + ' cell(s) found.';
-                wrapEl.style.display = 'block';
             }
 
             function finish() {
@@ -472,7 +520,7 @@ return view.extend({
                     finish();
                     return;
                 }
-                fs.exec_direct('/usr/libexec/jodu_neighbor_result.sh').then(function(res) {
+                fs.exec_direct('/usr/libexec/jodu52140-neighbor-result.sh').then(function(res) {
                     var out = (res || '').trim();
                     if (out === 'PENDING') {
                         setTimeout(function() { pollResult(attemptsLeft - 1); }, 3000);
@@ -492,7 +540,7 @@ return view.extend({
                 });
             }
 
-            fs.exec_direct('/usr/libexec/jodu_neighbor.sh').then(function(res) {
+            fs.exec_direct('/usr/libexec/jodu52140-neighbor.sh').then(function(res) {
                 var out = (res || '').trim();
                 if (out === 'BUSY') {
                     statusEl.innerText = 'A scan is already running, waiting for it to finish...';
@@ -507,14 +555,15 @@ return view.extend({
         var termBtn = container.querySelector('#odu-terminal-btn');
         termBtn.addEventListener('click', function() {
             var body = document.createElement('div');
+            body.style.cssText = 'min-width: 600px;';
             body.innerHTML = `
-                <div style="background: #0f172a; color: #a78bfa; padding: 15px; border-radius: 8px; font-family: monospace; min-height: 200px; max-height: 400px; overflow-y: auto; margin-bottom: 15px; font-size: 13px;" id="odu-term-out">
+                <div style="background: #0f172a; color: #a78bfa; padding: 18px; border-radius: 8px; font-family: monospace; min-height: 320px; max-height: 60vh; overflow-y: auto; margin-bottom: 15px; font-size: 14px; line-height: 1.6;" id="odu-term-out">
                     <div>Welcome to Jio ODU AT Terminal.</div>
                     <div style="color: #64748b;">Warning: Invalid AT commands may cause the modem to crash or reboot.</div>
                     <div style="color: #64748b;">(Note: Each command takes ~10 seconds to execute via Telnet injection)</div><br>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="odu-term-in" class="cbi-input-text" placeholder="e.g. AT+QNWINFO" style="flex: 1; font-family: monospace; text-transform: uppercase;" autocomplete="off">
+                    <input type="text" id="odu-term-in" class="cbi-input-text" placeholder="e.g. AT+QNWINFO" style="flex: 1; font-family: monospace; text-transform: uppercase; font-size: 14px; padding: 10px 12px;" autocomplete="off">
                     <button class="btn cbi-button-action important" id="odu-term-send">Send</button>
                 </div>
             `;
@@ -530,6 +579,12 @@ return view.extend({
             body.appendChild(btnWrap);
 
             ui.showModal('AT Terminal', [body]);
+
+            var modalEl = document.querySelector('.modal');
+            if (modalEl) {
+                modalEl.style.width = '650px';
+                modalEl.style.maxWidth = '90vw';
+            }
 
             var inEl = document.getElementById('odu-term-in');
             var outEl = document.getElementById('odu-term-out');
@@ -556,7 +611,7 @@ return view.extend({
                 inEl.disabled = true;
                 sendBtn.disabled = true;
 
-                fs.exec_direct('/usr/libexec/jodu_at.sh', [cmd.toUpperCase()]).then(function(res) {
+                fs.exec_direct('/usr/libexec/jodu52140-at.sh', [cmd.toUpperCase()]).then(function(res) {
                     waitDiv.innerText = (res && res.trim() !== '') ? res.trim() : 'OK';
                     waitDiv.style.color = '#f8fafc';
                     outEl.scrollTop = outEl.scrollHeight;
@@ -714,7 +769,7 @@ return view.extend({
                         'uci set jodu52140.main.sched_reboot="' + (enable ? '1' : '0') + '"',
                         'uci set jodu52140.main.sched_time="' + time + '"',
                         'uci commit jodu52140',
-                        '/usr/libexec/jodu_cron.sh "' + (enable ? '1' : '0') + '" "' + min + '" "' + hour + '"'
+                        '/usr/libexec/jodu52140-cron.sh "' + (enable ? '1' : '0') + '" "' + min + '" "' + hour + '"'
                     ].join('; ');
 
                     fs.exec_direct('/bin/sh', ['-c', cmds]).then(function() {
@@ -763,7 +818,7 @@ return view.extend({
         poll.add(function() {
             if (isConfiguring) return; 
 
-            return fs.exec_direct('/usr/libexec/odu-data.sh').then(function(res) {
+            return fs.exec_direct('/usr/libexec/jodu52140-data.sh').then(function(res) {
                 if (isConfiguring) return; 
                 
                 try { 
@@ -874,7 +929,16 @@ return view.extend({
                     
                     document.getElementById('ui-top-mode').innerText = (data.mccmnc && data.mccmnc !== '--' ? data.mccmnc : 'Searching PLMN') + ' | NR5G-SA';
 
-                    document.getElementById('ui-duplex').innerText = data.duplex;
+                    var ethEl = document.getElementById('ui-ethlink');
+                    if (ethEl) {
+                        if (data.eth_link === 'yes' && data.eth_speed && data.eth_speed !== 'Unknown') {
+                            ethEl.innerText = data.eth_speed + ' (' + (data.eth_duplex || 'Full') + ')';
+                            ethEl.style.color = '#4ade80';
+                        } else {
+                            ethEl.innerText = 'LINK DOWN';
+                            ethEl.style.color = '#ef4444';
+                        }
+                    }
                     document.getElementById('ui-band').innerText = data.band;
                     document.getElementById('ui-bw').innerText = data.bw + ' MHz';
                     document.getElementById('ui-arfcn').innerText = data.arfcn;

@@ -1,5 +1,5 @@
 #!/bin/sh
-# /usr/libexec/jodu_neighbor.sh - Starts a background nearby-cell scan
+# /usr/libexec/jodu52140-neighbor.sh - Starts a background nearby-cell scan
 LOCK="/tmp/odu_neighbor.lock"
 OUT="/tmp/odu_neighbor_result.txt"
 
