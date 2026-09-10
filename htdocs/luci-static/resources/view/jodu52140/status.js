@@ -262,8 +262,8 @@ return view.extend({
                         </div>
                     </div>
                     <div id="odu-scan-status" style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; display:none;"></div>
-                    <div class="sa-transparent-node" id="odu-scan-wrap" style="display:none;">
-                        <table class="sa-table">
+                    <div class="sa-transparent-node" id="odu-scan-wrap" style="display:none; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                        <table class="sa-table" style="min-width:520px;">
                             <tr class="sa-tr">
                                 <td class="sa-td left" style="font-weight:700;">PLMN</td>
                                 <td class="sa-td left" style="font-weight:700;">PCI</td>
@@ -272,7 +272,7 @@ return view.extend({
                                 <td class="sa-td right" style="font-weight:700;">Action</td>
                             </tr>
                         </table>
-                        <table class="sa-table" id="odu-scan-table"></table>
+                        <table class="sa-table" id="odu-scan-table" style="min-width:520px;"></table>
                     </div>
                 </div>
             </div>
@@ -555,7 +555,6 @@ return view.extend({
         var termBtn = container.querySelector('#odu-terminal-btn');
         termBtn.addEventListener('click', function() {
             var body = document.createElement('div');
-            body.style.cssText = 'min-width: 600px;';
             body.innerHTML = `
                 <div style="background: #0f172a; color: #a78bfa; padding: 18px; border-radius: 8px; font-family: monospace; min-height: 320px; max-height: 60vh; overflow-y: auto; margin-bottom: 15px; font-size: 14px; line-height: 1.6;" id="odu-term-out">
                     <div>Welcome to Jio ODU AT Terminal.</div>
@@ -582,8 +581,9 @@ return view.extend({
 
             var modalEl = document.querySelector('.modal');
             if (modalEl) {
-                modalEl.style.width = '650px';
-                modalEl.style.maxWidth = '90vw';
+                modalEl.style.width = 'min(650px, 92vw)';
+                modalEl.style.maxWidth = '92vw';
+                modalEl.style.boxSizing = 'border-box';
             }
 
             var inEl = document.getElementById('odu-term-in');
